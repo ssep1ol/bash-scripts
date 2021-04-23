@@ -1,0 +1,137 @@
+#!/bin/bash
+
+ # This file is part of a collection of bash scripts written and used by me which may be handy in server administration.
+ #
+ # (c) Corrado Mulas <tlc@mulas.me>
+ #
+ # For the full copyright and license information, please view the LICENSE
+ # file that was distributed with this source code.
+ 
+LOAD=$(uptime | awk -F'[a-z]:' '{ print $2}' | cut -f2 -d " " | sed 's/.$//' | tr -s , .)
+#TIMEST=date '+%F %T' 
+CACHET_KEY="your_api_key"
+CACHET_URL_M1="https://your-host/api/v1/metrics/1/points"
+CACHET_URL_C1="https://your-host/api/v1/components/1"
+STATUS_C1="0"
+
+generate_post_data()
+{
+cat <<EOF
+{"value": ${LOAD}}
+EOF
+}
+
+#METRICS
+curl --silent -H "Content-Type: application/json;" POST -H "X-Cachet-Token: ${CACHET_KEY}" --url ${CACHET_URL_M1} --data '{"value": '${LOAD}'}'
+
+#COMPONENTS
+#curl --silent -H "Content-Type: application/json;" DELETE -H "X-Cachet-Token: ${CACHET_KEY}" --url ${CACHET_URL_C1} --data '{"value": '${STATUS_C1}'}'
+
+
+#ASTERISK #2
+if pgrep -x "asterisk" > /dev/null && pgrep -x "safe_asterisk" > /dev/null
+then
+    curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/2 \
+  -d '{"status":1}'
+else
+    curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/2 \
+  -d '{"status":4}'
+fi
+
+
+#EMBY #17
+if pgrep -x "EmbyServer" > /dev/null
+then
+    curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/17 \
+  -d '{"status":1}'
+else
+    curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/17 \
+  -d '{"status":4}'
+fi
+
+LOAD_TIME_C17=$(/a2loadtime.sh your_emby_host 1 | grep "min=" | awk '{print $5}'| sed 2,2d | head -c-2 | sed 's/min=//' | tr ',' '.')
+
+BC_COMP_C17=$(echo "${LOAD_TIME_C17}>1" | bc)
+
+if [ "${BC_COMP_C17}" == 1 ]
+then
+  curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/17 \
+  -d '{"status":2}'
+fi
+
+
+#curl -H "Content-Type:application/json" \
+#  -H "X-Cachet-Token: ${CACHET_KEY}" \
+#  -X PUT https://your-host/api/v1/components/3 \
+#  -d '{"status":0}'
+
+#echo ${LOAD}
+
+
+#DOVECOT #16
+if pgrep -x "dovecot" > /dev/null && nc -w 2 -z "imap.mulas.me" 143
+then
+    curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/16 \
+  -d '{"status":1}'
+else
+    curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/16 \
+  -d '{"status":4}'
+fi
+
+
+#POSTFIX #6
+#/usr/lib/postfix/sbin/master -w
+#qmgr -l -t unix -u
+#tlsmgr -l -t unix -u -c
+#pickup -l -t unix -u -c
+#anvil -l -t unix -u -c
+
+if pgrep -x "master" > /dev/null && pgrep -x "qmgr" > /dev/null && pgrep -x "tlsmgr" > /dev/null && pgrep -x "pickup" > /dev/null && nc -w 2 -z "smtp.example.com" 25
+then
+    curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/6 \
+  -d '{"status":1}'
+else
+    curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/6 \
+  -d '{"status":4}'
+fi
+
+#ASTERISK IAX TRUNKS INTERCONNECTION #21
+serviceIsRunning=false
+var1=$(/usr/sbin/asterisk -rx "iax2 show peers" |grep "TRUNK_NAME" |awk '{print $8}'| sed 2,2d)
+var2=$(echo $data | awk '{print $2}')
+if [ "$var1" == OK ]
+then
+serviceIsRunning=true
+
+    curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/21 \
+  -d '{"status":1}'
+
+fi
+if [ $serviceIsRunning == false ]
+then
+    curl -H "Content-Type:application/json" \
+  -H "X-Cachet-Token: ${CACHET_KEY}" \
+  -X PUT https://your-host/api/v1/components/21 \
+  -d '{"status":4}'
+
+fi

@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+ # This file is part of a collection of bash scripts written and used by me which may be handy in server administration.
+ #
+ # (c) Corrado Mulas <tlc@mulas.me>
+ #
+ # For the full copyright and license information, please view the LICENSE
+ # file that was distributed with this source code.
+ 
+if [ "$(id -u)" -eq 0 ]
+then
+  service log2ram stop
+  systemctl disable log2ram
+  rm /etc/systemd/system/log2ram.service
+  rm /usr/local/bin/log2ram
+  rm /etc/log2ram.conf
+  rm /etc/cron.hourly/log2ram
+  rm /etc/logrotate.d/log2ram
+
+  if [ -d /var/hdd.log ]; then
+    rm -r /var/hdd.log
+  fi
+  echo "Log2Ram is uninstalled, removing the uninstaller in progress"
+  rm /usr/local/bin/uninstall-log2ram.sh
+  echo "##### Reboot isn't needed #####"
+else
+  echo "You need to be ROOT (sudo can be used)"
+fi
+

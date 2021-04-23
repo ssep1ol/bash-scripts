@@ -1,0 +1,13 @@
+#!/bin/bash
+
+ # This file is part of a collection of bash scripts written and used by me which may be handy in server administration.
+ #
+ # (c) Corrado Mulas <tlc@mulas.me>
+ #
+ # For the full copyright and license information, please view the LICENSE
+ # file that was distributed with this source code.
+ 
+service fail2ban stop
+truncate -s 0 /var/log/fail2ban.log
+rm /var/lib/fail2ban/fail2ban.sqlite3
+service fail2ban start
